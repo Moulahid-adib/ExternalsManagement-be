@@ -14,4 +14,15 @@ public record OfferDTO(
         String formattedDescription,
         List<InterviewDTO> interviews
 
-) {}
+) {
+    @Override
+    public String toString() {
+        // Exclude 'interviews' to keep AI prompt small
+        return "OfferDTO[" +
+                "id=" + id +
+                ", title=" + title +
+                ", description=" + description +
+                ", formattedDescription=" + formattedDescription +
+                "]";
+    }
+}

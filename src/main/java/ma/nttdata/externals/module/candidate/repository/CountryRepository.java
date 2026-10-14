@@ -10,4 +10,5 @@ import java.util.UUID;
 @Repository
 public interface CountryRepository extends ListCrudRepository<Country, UUID> {
     Optional<Country> findByEnglishName(String englishName);
+    Optional<Country> findByName(String name);
 }

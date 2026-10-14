@@ -315,6 +315,19 @@ public class InterviewServImpl implements InterviewServ {
                                                         GenerateInterviewQuestionsRequest generateInterviewQuestionsRequest){
         placeholdersForInterviewQuestionsPromptDTO placeholders = getPlaceholdersForInterviewQuestionsPrompt(interviewId);
         List<EvaluationTypeDTO> evaluationTypes = evaluationTypeServ.findAllById(generateInterviewQuestionsRequest.evaluationTypesIds());
+        
+        // --- Initialize empty evaluations so AI can fill them later ---
+        Interview interview = interviewRepository.findById(interviewId)
+                .orElseThrow(() -> new RuntimeException("Interview not found: " + interviewId));
+        List<Evaluation> emptyEvaluations = evaluationTypes.stream().map(typeDto -> {
+            Evaluation eval = new Evaluation();
+            eval.setInterview(interview);
+            eval.setEvaluationType(evaluationTypeMapper.toEntity(typeDto));
+            return eval;
+        }).collect(Collectors.toList());
+        evaluationRepository.saveAll(emptyEvaluations);
+        // -------------------------------------------------------------
+
         PromptDTO prompt = promptServ.findByPromptCode(InterviewPromptConstants.INTERVIEW_GENERATE_QUESTIONS_PROMPT_CODE);
         List<QuestionDTO> generatedQuestions = questionServ.prepareQuestionsFromAIResponse( placeholders, evaluationTypes,prompt);
         List<QuestionDTO> generatedQuestionsWithInterviewId = generatedQuestions.stream()
@@ -337,6 +350,13 @@ public class InterviewServImpl implements InterviewServ {
         List<EvaluationsAIResponseDTO> aiEvaluationResponse = evaluationServ.prepareEvaluationsDTOFromAiResponse(interviewEvaluationsRequest,placeholders,prompt);
         List<Evaluation> evaluations = evaluationServ.getAllEvaluationsByInterviewID(interviewId);
         List<Evaluation> savedEvaluations = evaluationServ.saveAIEvaluationResponse(aiEvaluationResponse,evaluations);
+
+        Interview interview = interviewRepository.findById(interviewId).orElse(null);
+        if (interview != null && interview.getEndTime() == null) {
+            interview.setEndTime(java.time.LocalDateTime.now());
+            interviewRepository.save(interview);
+        }
+
         return savedEvaluations;
     }
 

@@ -61,12 +61,41 @@ public interface EvaluationMapper {
         for (Evaluation evaluation : evaluations) {
             String evaluationTypeDescription = evaluation.getEvaluationType().getDescription();
 
+            // Strategy 1: exact match (case-insensitive)
+            EvaluationsAIResponseDTO bestMatch = null;
             for (EvaluationsAIResponseDTO aiResponse : aiResponses) {
-                if (aiResponse.evaluationTypeDescription().equals(evaluationTypeDescription)) {
-                    evaluation.setFeedback(aiResponse.feedback());
-                    evaluation.setScore(aiResponse.score());
+                if (aiResponse.evaluationTypeDescription() != null &&
+                    aiResponse.evaluationTypeDescription().trim().equalsIgnoreCase(evaluationTypeDescription.trim())) {
+                    bestMatch = aiResponse;
                     break;
                 }
+            }
+
+            // Strategy 2: contains match (e.g. "Technical" matches "Technical Skills" and "Technical Knowledge")
+            if (bestMatch == null) {
+                String[] dbWords = evaluationTypeDescription.toLowerCase().split("\\s+");
+                int bestScore = 0;
+                for (EvaluationsAIResponseDTO aiResponse : aiResponses) {
+                    if (aiResponse.evaluationTypeDescription() == null) continue;
+                    String[] aiWords = aiResponse.evaluationTypeDescription().toLowerCase().split("\\s+");
+                    int overlap = 0;
+                    for (String dbWord : dbWords) {
+                        for (String aiWord : aiWords) {
+                            if (dbWord.equals(aiWord) && dbWord.length() > 3) overlap++;
+                        }
+                    }
+                    if (overlap > bestScore) {
+                        bestScore = overlap;
+                        bestMatch = aiResponse;
+                    }
+                }
+                // Only use fuzzy if there was at least 1 word in common
+                if (bestScore == 0) bestMatch = null;
+            }
+
+            if (bestMatch != null) {
+                evaluation.setFeedback(bestMatch.feedback());
+                evaluation.setScore(bestMatch.score());
             }
         }
 

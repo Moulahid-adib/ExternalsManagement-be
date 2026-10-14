@@ -125,12 +125,15 @@ public class EvaluationServImpl implements EvaluationServ {
     public String getInterviewsEvaluationsFromAiByPrompt(InterviewEvaluationsRequestDTO interviewEvaluationsRequest, PlaceholdersForInterviewEvaluationPromptDTO placeholders,PromptDTO prompt){
         String promptDesc  = prompt.promptDesc();
 
-        promptDesc.replace(InterviewEvaluationPromptConstants.CANDIDATE_PLACEHOLDER,placeholders.candidate().toString())
+        String candidateData = placeholders.candidate().toString()
+                .replaceAll("b64EFile=[^,)]+", "b64EFile=REDACTED");
+
+        promptDesc = promptDesc.replace(InterviewEvaluationPromptConstants.CANDIDATE_PLACEHOLDER, candidateData)
                 .replace(InterviewEvaluationPromptConstants.OFFER_PLACEHOLDER,placeholders.offer().toString())
                 .replace(InterviewEvaluationPromptConstants.JSON_SCHEMA_PLACEHOLDER,prompt.schema())
                 .replace(InterviewEvaluationPromptConstants.QUESTION_ANSWER_DTO_PLACEHOLDER,interviewEvaluationsRequest.questionsAndAnswersForEvaluation().toString())
                 .replace(InterviewEvaluationPromptConstants.EVALUATION_TYPES_PLACEHOLDER,placeholders.evaluationType().toString())
-                .replace(InterviewEvaluationPromptConstants.JSON_MOCK_PLACEHOLDER,InterviewEvaluationPromptConstants.JSON_MOCK_PLACEHOLDER);
+                .replace(InterviewEvaluationPromptConstants.JSON_MOCK_PLACEHOLDER,InterviewEvaluationPromptConstants.JSON_MOCK);
 
         return aiRestClient.post()
                 .uri("/evaluationInterview")

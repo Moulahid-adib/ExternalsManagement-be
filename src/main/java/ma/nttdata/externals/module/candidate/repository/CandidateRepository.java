@@ -32,5 +32,21 @@ public interface CandidateRepository extends JpaRepository<Candidate, UUID> {
             @Param("languages") List<String> languages
     );
 
+    @Query("""
+    SELECT DISTINCT c
+    FROM Candidate c
+    WHERE c.yearsOfExperience >= :minYears
+    AND (
+       LOWER(c.mainTech) = LOWER(:mainTech)
+    OR LOWER(c.mainTech) LIKE LOWER(CONCAT('%', :mainTech, '%'))
+    OR LOWER(:mainTech) LIKE CONCAT('%', LOWER(c.mainTech), '%')
+            )
+    ORDER BY c.yearsOfExperience DESC
+    """)
+    List<Candidate> findCandidatesRoughMatchNoLang(
+            @Param("mainTech") String mainTech,
+            @Param("minYears") int minYears
+    );
+
 
 }

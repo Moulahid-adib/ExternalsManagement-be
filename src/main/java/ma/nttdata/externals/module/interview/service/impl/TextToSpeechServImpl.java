@@ -43,7 +43,11 @@ public class TextToSpeechServImpl implements TextToSpeechServ {
                 .outputFormat("mp3_44100_128")
                 .build();
 
-        var prompt = new TextToSpeechPrompt(text, options);
-        return textToSpeechModel.call(prompt).getResult().getOutput();
+        try {
+            var prompt = new TextToSpeechPrompt(text, options);
+            return textToSpeechModel.call(prompt).getResult().getOutput();
+        } catch (Exception e) {
+            return new byte[0]; // Return empty audio to fallback to silent mode on frontend
+        }
     }
 }

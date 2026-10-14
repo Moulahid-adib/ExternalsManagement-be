@@ -4,6 +4,11 @@ server:
 spring:
   application:
     name: cv-management-system
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:9090/realms/externals-management
   flyway:
     enabled: true
     locations: classpath:db/migration

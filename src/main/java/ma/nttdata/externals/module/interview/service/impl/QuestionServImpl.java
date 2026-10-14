@@ -134,7 +134,10 @@ public class QuestionServImpl implements QuestionServ {
     public String generateInterviewQuestionsByPrompt(placeholdersForInterviewQuestionsPromptDTO generateQuestionsInfo, List<EvaluationTypeDTO> evaluationTypes, PromptDTO prompt){
         String promptDesc = prompt.promptDesc();
 
-        promptDesc = promptDesc.replace(InterviewPromptConstants.CANDIDATE_DATA_PLACEHOLDER, generateQuestionsInfo.candidate().toString())
+        String candidateData = generateQuestionsInfo.candidate().toString()
+                .replaceAll("b64EFile=[^,)]+", "b64EFile=REDACTED");
+
+        promptDesc = promptDesc.replace(InterviewPromptConstants.CANDIDATE_DATA_PLACEHOLDER, candidateData)
                 .replace(InterviewPromptConstants.OFFER_DATA_PLACEHOLDER, generateQuestionsInfo.offer().toString())
                 .replace(InterviewPromptConstants.EVALUATION_TYPE_DATA_PLACEHOLDER,evaluationTypes.toString())
                 .replace(InterviewPromptConstants.NUMBER_OF_QUESTIONS_PLACEHOLDER,String.valueOf(generateQuestionsInfo.numberOfQuestions()))

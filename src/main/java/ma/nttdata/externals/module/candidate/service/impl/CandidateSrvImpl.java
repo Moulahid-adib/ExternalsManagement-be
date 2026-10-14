@@ -49,13 +49,33 @@ public class CandidateSrvImpl implements CandidateSrv {
             }
 
             Candidate candidate = mapper.candidateDTOToCandidate(candidateDTO);
-            Optional<Country> existingCountry = countryRepository.findByEnglishName(candidate.getAddress().getCountry().getEnglishName());
-            existingCountry.ifPresent(country -> {
-                candidate.getAddress().setCountry(country);
-                candidate.getAddress().getCity().setCountry(country);
-            });
-            Optional<City> existingCity = cityRepository.findByName(candidate.getAddress().getCity().getName());
-            existingCity.ifPresent(candidate.getAddress()::setCity);
+            if (candidate.getAddress() != null && candidate.getAddress().getCountry() != null) {
+                Country reqCountry = candidate.getAddress().getCountry();
+                Optional<Country> existingCountry = Optional.empty();
+                
+                if (reqCountry.getEnglishName() != null) {
+                    existingCountry = countryRepository.findByEnglishName(reqCountry.getEnglishName());
+                }
+                if (existingCountry.isEmpty() && reqCountry.getName() != null) {
+                    existingCountry = countryRepository.findByName(reqCountry.getName());
+                }
+
+                if (existingCountry.isPresent()) {
+                    candidate.getAddress().setCountry(existingCountry.get());
+                    if (candidate.getAddress().getCity() != null) {
+                        candidate.getAddress().getCity().setCountry(existingCountry.get());
+                    }
+                } else {
+                    if (reqCountry.getEnglishName() == null) {
+                        reqCountry.setEnglishName(reqCountry.getName());
+                    }
+                }
+            }
+            
+            if (candidate.getAddress() != null && candidate.getAddress().getCity() != null) {
+                Optional<City> existingCity = cityRepository.findByName(candidate.getAddress().getCity().getName());
+                existingCity.ifPresent(candidate.getAddress()::setCity);
+            }
 
             Candidate savedCandidate = candidateRepository.save(candidate);
             return mapper.candidateToCandidateDTO(savedCandidate);
@@ -216,11 +236,19 @@ public class CandidateSrvImpl implements CandidateSrv {
                         .map(l -> l.languageName().toLowerCase(Locale.ROOT).trim())
                         .toList();
 
-        List<Candidate> roughMatches = candidateRepository.findCandidatesRoughMatch(
-                offerDTO.mainTech(),
-                offerDTO.yearsOfExperience(),
-                offerLanguageNames
-        );
+        List<Candidate> roughMatches;
+        if (offerLanguageNames.isEmpty()) {
+            roughMatches = candidateRepository.findCandidatesRoughMatchNoLang(
+                    offerDTO.mainTech(),
+                    offerDTO.yearsOfExperience()
+            );
+        } else {
+            roughMatches = candidateRepository.findCandidatesRoughMatch(
+                    offerDTO.mainTech(),
+                    offerDTO.yearsOfExperience(),
+                    offerLanguageNames
+            );
+        }
         List<OfferCandidatesDTO> candidateDTOs = roughMatches.stream()
                 .map(mapper::toOfferCandidatesDTO)
                 .filter(c -> matchLanguagesWithLevel(c, offerDTO))
