@@ -7,3 +7,16 @@ services:
       - 'POSTGRES_USER=postgres'
     ports:
       - '5433:5432'
+
+  keycloak:
+    image: 'quay.io/keycloak/keycloak:latest'
+    command: 'start-dev --import-realm'
+    environment:
+      - 'KEYCLOAK_ADMIN=admin'
+      - 'KEYCLOAK_ADMIN_PASSWORD=admin'
+    ports:
+      - '9090:8080'
+    volumes:
+      - './keycloak:/opt/keycloak/data/import'
+    depends_on:
+      - postgres
