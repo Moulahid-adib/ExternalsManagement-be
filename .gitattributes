@@ -1,2 +1,9 @@
 /mvnw text eol=lf
 *.cmd text eol=crlf
+
+# GitHub Linguist overrides
+*.java linguist-detectable=true
+*.java linguist-vendored=false
+src/main/resources/templates/** linguist-documentation=true
+db-init/** linguist-vendored=true
+keycloak/** linguist-vendored=true
